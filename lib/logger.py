@@ -3,7 +3,7 @@ import logging
 
 from colorama import Fore, Style, init
 
-LEVEL = logging.DEBUG
+LEVEL = logging.INFO
 
 
 # LEVEL = logging.ERROR

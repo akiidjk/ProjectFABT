@@ -1,98 +1,129 @@
-import os.path
-from pathlib import Path
+import argparse
+import os
 from sys import platform
 
 from lib.logger import logging
-from lib.utils import run_command
-
-# list_command = [
-#     'strings',
-#     # 'checksec',
-#     'file',
-#     'readelf'
-# ]
-
-commands = [
-    {"command": "strings", "args": "{file}"},
-    {"command": "file", "args": "{file}"},
-    {"command": "objdump", "args": "-d {file}"},
-]
-
-DISTRO = "-d Ubuntu"  # TODO add argument
-FILE = "hidden_variable"
-PATH = Path(__file__).resolve().parent
-FULL_PATH = os.path.join(PATH, "binary_test", FILE).strip()
+from lib.reporter import Reporter
+from lib.utils import run_command, read_command_config, fix_path
 
 
-def check_wsl():
-    logging.info("Checking for WSL")
-    results = run_command("wsl --list", auto=False)
+class FABT:
+    def __init__(self, path, distro=""):
+        self.path = path
+        self.commands = read_command_config()
+        self.reporter = None
+        self.distro = distro
 
-    if results[1] != '':
-        logging.error("The system not have WSL with some distribution or an error occurred: " + results[1])
-        return 1
+    def main(self):
+        logging.info("Starting check")
+        logging.debug(f"{self.commands = }")
 
-    list_distro = [element for element in results[0].strip().split('\n')[1:] if element != '']
+        if self.check() == 1:
+            exit(1)
+        logging.info("All checks passed")
+        logging.info("Initializing report")
+        self.reporter = Reporter(self.path)
 
-    if len(list_distro) == 0:
-        logging.error("The system has no WSL with some distribution or an error occurred: " + results[0])
-        return 1
+        logging.info("Start analysis")
+        self.analysis()
+        logging.info("Analysis completed")
 
-    logging.info("The system has a WSL with some distribution \n" + '\n'.join(list_distro))
+    def check_wsl(self):
+        logging.info("Checking for WSL")
+        results = run_command("wsl --list", auto=False)
 
-
-def check_command():
-    logging.info("Checking for command")
-
-    for command in commands:
-
-        results = run_command(f"{command['command']} -v")
-
-        if results[1] != '' and results[0] == '':
-            logging.error(f"The system not have the command: {command['command']} please install first: " + results[1])
+        if results[1] != '':
+            logging.error("The system not have WSL with some distribution or an error occurred: " + results[1])
             return 1
 
-        logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
-    return 0
+        list_distro = [element for element in results[0].strip().split('\n')[1:] if element != '']
 
-
-def check():
-    """This function check if the system has all the required dependencies"""
-    global FULL_PATH
-    if platform.startswith('win'):
-        results = run_command(f'wslpath "{FULL_PATH}"')
-        FULL_PATH = results[0]
-
-        if check_wsl() == 1:
+        if len(list_distro) == 0:
+            logging.error("The system has no WSL with some distribution or an error occurred: " + results[0])
             return 1
 
-    logging.info("System check passed")
+        logging.info("The system has a WSL with some distribution \n" + '\n'.join(list_distro))
 
-    if check_command() == 1:
-        return 1
+    def check_command(self):
+        logging.info("Checking for command")
 
-    logging.info("Command check passed")
+        for command in self.commands:
 
-    return 0
+            results = run_command(f"{command['command']} {command['check']}")
 
+            if results[1] != '' and results[0] == '':
+                logging.error(
+                    f"The system not have the command: {command['command']} please install first | Error: " + results[
+                        1])
+                return 1
 
-def analysis():
-    for command in commands:
-        test = command['command'] + " " + command['args'].format(file=FULL_PATH)
-        logging.debug(f"Test: {test}")
-        results = run_command(test)
+            logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
+        return 0
 
-        logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
+    def check(self):
+        """This function check if the system has all the required dependencies"""
 
+        logging.info("Check if the file exist")
+        if not os.path.exists(self.path):
+            logging.error("The file not exists")
+            return 1
 
-def main():
-    logging.info("Starting check")
-    if check() == 1:
-        exit(1)
-    logging.info("All checks passed")
-    logging.info("Start analysis")
-    analysis()
+        if platform.startswith('win'):
+            self.path = fix_path(self.path)
+
+            if self.check_wsl() == 1:
+                return 1
+
+        logging.info("System check passed")
+
+        if self.check_command() == 1:
+            return 1
+
+        logging.info("Command check passed")
+
+        return 0
+
+    def analysis(self):
+        for command in self.commands:
+            formatted_command = command['command'] + " " + command['args'].format(file=self.path)
+            logging.debug(f"{formatted_command = }", self.distro)
+            results = run_command(formatted_command)
+
+            command_report = f"""
+## Command: {command['command']}
+
+### Stdout:
+```
+{results[0]}
+```
+### Stderror:
+
+{results[1] if results[1] != '' else "No error occurred"}
+"""
+
+            self.reporter.write(command_report)
+
+            logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        prog='FABT | Fast Analysis Binary Tool',
+        description='Make fast static analysis of a binary file for CTF format',
+        epilog='For help or docs go to https://github.com/akiidjk/ProjectFABT')
+
+    parser.add_argument("-f", "--filepath", default="No specified",
+                        help="The path for the binary for the execution (absolute path required)")
+    parser.add_argument("-d", "--distro", default="", help="Specify the distro for WSL")
+    parser.add_argument("-v", "--version", help="Print the version", action='store_true')
+    args = parser.parse_args()
+
+    if args.version:
+        print("Version: 1.0.0")
+        exit(0)
+    elif args.filepath == "No specified":
+        logging.error("You must to specify the path of file")
+        exit(1)
+
+    fabt = FABT(args.filepath, distro=args.distro)
+    fabt.main()

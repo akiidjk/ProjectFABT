@@ -1,0 +1,24 @@
+{
+  "commands": [
+    {
+      "command": "strings",
+      "args": "{file}",
+      "check": "-v"
+    },
+    {
+      "command": "file",
+      "args": "{file}",
+      "check": "-v"
+    },
+    {
+      "command": "objdump",
+      "args": "-d {file}",
+      "check": "-v"
+    },
+    {
+      "command": "checksec",
+      "args": "--file={file}",
+      "check": "--version"
+    }
+  ]
+}
