@@ -10,13 +10,13 @@ class Reporter:
     def __init__(self, binary_name):
         name_report = f"report_{datetime.datetime.now().strftime('%d-%m-%y-%H-%M')}.md"
         logging.debug(name_report)
-        path_report = os.path.join(Path(__file__).resolve().parent, "..", "reports")
+        path_report = os.path.abspath(os.path.join(Path(__file__).resolve().parent, "..", "reports"))
 
         if not os.path.exists(path_report):
             os.mkdir(path_report)
 
-        path = os.path.join(path_report, name_report)
-        self.report = open(path, "w")
+        self.path = os.path.join(path_report, name_report)
+        self.report = open(self.path, "w")
         self.init_report(binary_name)
 
     def init_report(self, binary_name):
