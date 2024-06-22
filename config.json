@@ -20,5 +20,13 @@
       "args": "--file={file}",
       "check": "--version"
     }
+  ],
+  "logging": "INFO",
+  "keywords": [
+    "puts",
+    "flag",
+    "win",
+    "secret",
+    "^[0-9A-Fa-f]+"
   ]
 }

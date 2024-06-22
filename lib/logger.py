@@ -3,7 +3,9 @@ import logging
 
 from colorama import Fore, Style, init
 
-LEVEL = logging.INFO
+from lib.utils import read_config
+
+LEVEL = read_config()["logging"].upper()
 
 
 # LEVEL = logging.ERROR

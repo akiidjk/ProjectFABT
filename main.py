@@ -1,18 +1,20 @@
 import argparse
 import os
+import re
 from sys import platform
 
 from lib.logger import logging
 from lib.reporter import Reporter
-from lib.utils import run_command, read_command_config, fix_path
+from lib.utils import run_command, read_config, fix_path, find_word_positions
 
 
 class FABT:
     def __init__(self, path, distro=""):
         self.path = path
-        self.commands = read_command_config()
+        self.commands = read_config()['commands']
         self.reporter = None
         self.distro = distro
+        self.stdouts = []
 
     def main(self):
         logging.info("Starting check")
@@ -30,16 +32,16 @@ class FABT:
 
     def check_wsl(self):
         logging.info("Checking for WSL")
-        results = run_command("wsl --list", auto=False)
+        stdout, stderr = run_command("wsl --list", auto=False)
 
-        if results[1] != '':
-            logging.error("The system not have WSL with some distribution or an error occurred: " + results[1])
+        if stderr != '':
+            logging.error("The system not have WSL with some distribution or an error occurred: " + stderr)
             return 1
 
-        list_distro = [element for element in results[0].strip().split('\n')[1:] if element != '']
+        list_distro = [element for element in stdout.strip().split('\n')[1:] if element != '']
 
         if len(list_distro) == 0:
-            logging.error("The system has no WSL with some distribution or an error occurred: " + results[0])
+            logging.error("The system has no WSL with some distribution or an error occurred: " + stdout)
             return 1
 
         logging.info("The system has a WSL with some distribution \n" + '\n'.join(list_distro))
@@ -49,15 +51,14 @@ class FABT:
 
         for command in self.commands:
 
-            results = run_command(f"{command['command']} {command['check']}")
+            stdout, stderr = run_command(f"{command['command']} {command['check']}", distro=self.distro)
 
-            if results[1] != '' and results[0] == '':
+            if stderr != '' and stdout == '':
                 logging.error(
-                    f"The system not have the command: {command['command']} please install first | Error: " + results[
-                        1])
+                    f"The system not have the command: {command['command']} please install first | Error: " + stderr)
                 return 1
 
-            logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
+            logging.debug(f"Command: {command['command']} - Stdout: {stdout} - Stderr: {stderr}")
         return 0
 
     def check(self):
@@ -69,7 +70,7 @@ class FABT:
             return 1
 
         if platform.startswith('win'):
-            self.path = fix_path(self.path)
+            self.path = fix_path(self.path, self.distro)
 
             if self.check_wsl() == 1:
                 return 1
@@ -85,45 +86,89 @@ class FABT:
 
     def analysis(self):
         for command in self.commands:
+            logging.debug(f"Checking {command['command']}")
+            logging.debug(command['args'].format(file=self.path))
             formatted_command = command['command'] + " " + command['args'].format(file=self.path)
-            logging.debug(f"{formatted_command = }", self.distro)
-            results = run_command(formatted_command)
+            logging.debug(f"{formatted_command = }")
+            stdout, stderr = run_command(formatted_command, distro=self.distro)
 
             command_report = f"""
 ## Command: {command['command']}
 
 ### Stdout:
 ```
-{results[0]}
+{stdout}
 ```
 ### Stderror:
 
-{results[1] if results[1] != '' else "No error occurred"}
+{stderr if stderr != '' else "No error occurred"}
 """
-
+            self.stdouts.append((command['command'], stdout))
             self.reporter.write(command_report)
 
-            logging.debug(f"Command: {command['command']} - Stdout: {results[0]} - Stderr: {results[1]}")
+            logging.debug(f"Command: {command['command']} - Stdout: {stdout} - Stderr: {stderr}")
+
+    def search(self, keywords: str):
+        logging.info("Start research")
+        self.reporter.write("## Keywords founded \n")
+
+        if keywords:
+            keywords = keywords.split(" ")
+        else:
+            keywords = read_config()["keywords"]
+
+        logging.debug(keywords)
+
+        for command, content in self.stdouts:
+            for keyword in keywords:
+                regex = re.compile(keyword) if keyword.startswith("^") else re.compile(
+                    r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+                number_match, results = find_word_positions(content, regex)
+                if number_match != 0:
+                    keyword_report = f"### For command: {command} founded {number_match}\n"
+                    logging.debug(f"For command: {command} founded {number_match}")
+                    for match in results:
+                        keyword_report += f"Found '{match['matched_text']}' at line {match['line']}, start: {match['start']}, end: {match['end']}\n\n"
+                        logging.debug(
+                            f"Found '{match['matched_text']}' at line {match['line']}, start: {match['start']}, end: {match['end']}")
+
+                    keyword_report += (("-" * 40) + "\n")
+                    logging.debug("-" * 40)
+                    self.reporter.write(keyword_report)
+
+        logging.info("Searched ended")
+        return 0
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='FABT | Fast Analysis Binary Tool',
-        description='Make fast static analysis of a binary file for CTF format',
+        description='A tool for executing binaries and searching keywords or regex in stdout, created for CTF',
         epilog='For help or docs go to https://github.com/akiidjk/ProjectFABT')
 
-    parser.add_argument("-f", "--filepath", default="No specified",
-                        help="The path for the binary for the execution (absolute path required)")
-    parser.add_argument("-d", "--distro", default="", help="Specify the distro for WSL")
-    parser.add_argument("-v", "--version", help="Print the version", action='store_true')
-    args = parser.parse_args()
+    parser.add_argument("-f", "--filepath", default=None,
+                        help="Absolute path to the binary for execution ")
+    parser.add_argument("-d", "--distro", default="", help="Specify the WSL distribution")
+    parser.add_argument("-v", "--version", help="Print the version and exit", action='store_true')
+    parser.add_argument("-s", "--search",
+                        help="Enable search in stdout for keywords or regex specified via command line or config.json",
+                        action='store_true')
+    parser.add_argument("-k", "--keywords",
+                        help="Specify keywords or regex (e.g., ^[0-9A-Fa-f]+$) for searching in stdout. Separate multiple entries with a single space. Can be specified via command line or config.json",
+                        default=None)
 
+    args = parser.parse_args()
     if args.version:
         print("Version: 1.0.0")
         exit(0)
-    elif args.filepath == "No specified":
+    elif not args.filepath:
         logging.error("You must to specify the path of file")
         exit(1)
 
     fabt = FABT(args.filepath, distro=args.distro)
     fabt.main()
+
+    if args.search:
+        fabt.search(args.keywords)
+
+    logging.info("FABT analysis finished")
