@@ -3,6 +3,8 @@ import os
 import re
 from sys import platform
 
+import colorama
+
 from lib.logger import logging
 from lib.reporter import Reporter
 from lib.utils import run_command, read_config, fix_path, find_word_positions
@@ -147,7 +149,7 @@ if __name__ == '__main__':
         epilog='For help or docs go to https://github.com/akiidjk/ProjectFABT')
 
     parser.add_argument("-f", "--filepath", default=None,
-                        help="Absolute path to the binary for execution ")
+                        help="Path to the binary for execution ")
     parser.add_argument("-d", "--distro", default="", help="Specify the WSL distribution")
     parser.add_argument("-v", "--version", help="Print the version and exit", action='store_true')
     parser.add_argument("-s", "--search",
@@ -165,10 +167,11 @@ if __name__ == '__main__':
         logging.error("You must to specify the path of file")
         exit(1)
 
-    fabt = FABT(args.filepath, distro=args.distro)
+    fabt = FABT(os.path.abspath(args.filepath), distro=args.distro)
     fabt.main()
 
     if args.search:
         fabt.search(args.keywords)
 
-    logging.info("FABT analysis finished")
+    logging.info(
+        f"FABT analysis finished you can found the report at {colorama.Fore.RED}{fabt.reporter.path}")
