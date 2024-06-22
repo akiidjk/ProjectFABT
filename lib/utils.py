@@ -12,7 +12,7 @@ def remove_null_bytes(text):
 
 def run_command(command, auto=True, distro=""):
     if platform.startswith('win') and auto:
-        command = f"wsl -d {distro} {command}"
+        command = f"wsl -d {distro} {command}" if distro != "" else f"wsl {command}"
     logging.debug(f"Running command: {command}")
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stdout, stderr = process.communicate()
