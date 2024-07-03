@@ -16,8 +16,23 @@
       "check": "-v"
     },
     {
+	  "command":"objdump",
+	  "args": "-t {file}",
+	  "check": "-v"
+    },
+    {
       "command": "checksec",
       "args": "--file={file}",
+      "check": "--help"
+    },
+    {
+      "command": "strace",
+      "args": "{file}",
+      "check": "--version"
+    },
+    {
+      "command": "ltrace",
+      "args": "{file}",
       "check": "--version"
     }
   ],
