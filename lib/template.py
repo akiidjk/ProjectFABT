@@ -9,7 +9,7 @@ elf = ELF("./binary")
 
 # context.arch = 'amd64'
 context.terminal = ['mate-terminal', '-x', 'sh', '-c']
-context.level = 'info'
+context.log_level = 'info'
 
 
 def main(mode: str):
