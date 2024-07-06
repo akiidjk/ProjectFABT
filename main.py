@@ -9,7 +9,7 @@ import colorama
 
 from lib.logger import logging
 from lib.reporter import Reporter
-from lib.utils import run_command, read_config, fix_path, find_word_positions
+from lib.utils import run_command, read_config, fix_path, find_word_positions, copy
 
 
 class FABT:
@@ -20,7 +20,7 @@ class FABT:
         self.distro = distro
         self.stdouts = []
 
-    def main(self):
+    def run(self):
         logging.info("Starting check")
         logging.debug(f"{self.commands = }")
 
@@ -144,6 +144,13 @@ class FABT:
         logging.info("Searched ended")
         return 0
 
+    def create_main(self):
+        path = os.path.join(os.getcwd(), "main.py")
+        template = os.path.join(os.path.dirname(__file__), "lib", "template.py")
+        logging.info(f"Creating main.py at {path}")
+        copy(template, path)
+        logging.info("main.py created")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -161,6 +168,9 @@ if __name__ == '__main__':
     parser.add_argument("-k", "--keywords",
                         help="Specify keywords or regex (e.g., ^[0-9A-Fa-f]+$) for searching in stdout. Separate multiple entries with a single space. Can be specified via command line or config.json",
                         default=None)
+    parser.add_argument("-i", "--init-main",
+                        help="Initialize a main.py in the current directory with the default template (by @akiidjk)",
+                        action='store_true')
 
     args = parser.parse_args()
     if args.version:
@@ -171,7 +181,9 @@ if __name__ == '__main__':
         exit(1)
 
     fabt = FABT(os.path.abspath(args.filepath), distro=args.distro)
-    fabt.main()
+    fabt.run()
+    if args.init_main:
+        fabt.create_main()
 
     if args.search:
         fabt.search(args.keywords)
