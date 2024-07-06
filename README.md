@@ -27,23 +27,27 @@ admin)
 ### Command Line Arguments
 
 - **`-f` or `--filepath`**:
-    - Description: Path to the binary for execution.
-    - Default: `None`
+  - Description: Path to the binary for execution.
+  - Default: `None`
 
 - **`-d` or `--distro`**:
-    - Description: Specify the WSL distribution.
-    - Default: `""` (empty string)
+  - Description: Specify the WSL distribution.
+  - Default: `""` (empty string)
 
 - **`-v` or `--version`**:
-    - Description: Print the version and exit.
+  - Description: Print the version and exit.
 
 - **`-s` or `--search`**:
-    - Description: Enable search in stdout for keywords or regex specified via command line or `config.json`.
+  - Description: Enable search in stdout for keywords or regex specified via command line or `config.json`.
 
 - **`-k` or `--keywords`**:
-    - Description: Specify keywords or regex (e.g., `^[0-9A-Fa-f]+$`) for searching in stdout. Separate multiple entries
-      with a single space. Can be specified via command line or `config.json`.
-    - Default: `None`
+  - Description: Specify keywords or regex (e.g., `^[0-9A-Fa-f]+$`) for searching in stdout. Separate multiple entries
+    with a single space. Can be specified via command line or `config.json`.
+  - Default: `None`
+
+- **`-i` or `--init-main`**:
+  - Generate a Python file named `main.py` that includes a template designed for leveraging `pwntools` to facilitate
+    binary exploitation tasks. For insert a personal template edit the file /lib/template.py
 
 ### Config
 
@@ -69,7 +73,46 @@ The possible value for the logging are: [DEBUG,INFO,WARNING,ERROR] i advice INFO
 
 Simple add regex or word in the list of keywords
 
+**The standard template file (template.py)**
+
+```python
+
+# !/usr/bin/env python3
+from sys import argv
+
+from pwn import *
+
+host = "127.0.0.1"
+port = 1337
+elf = ELF("./binary")
+
+# context.arch = 'amd64'
+context.terminal = ['mate-terminal', '-x', 'sh', '-c']
+context.level = 'info'
+
+
+def main(mode: str):
+  if mode == "local":
+    p = elf.process()
+    g = gdb.attach(p, gdbscript='''''')
+  elif mode == "remote":
+    p = connect(host, port)
+  else:
+    Error("Usage: python3 exploit.py [local|remote]")
+    exit(1)
+
+  p.interactive()
+
+
+if __name__ == "__main__":
+  main(argv[1])
+
+# Good luck by @akiidjk
+
+
+```
+
 ### Example Command
 
 ```sh
-fabt -f /path/to/binary -d Ubuntu -s -k "keyword1 ^[0-9A-Fa-f]+$"
+fabt -f /path/to/binary -d Ubuntu -s -k "keyword1 ^[0-9A-Fa-f]+$" -i
