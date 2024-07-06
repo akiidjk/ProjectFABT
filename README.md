@@ -17,6 +17,11 @@ expressions within the output. It can be configured via the command line or a `c
 - python3
 - colorama installed with ```pip install colorama```
 
+## Installation
+
+Simple run the ```setup.sh``` if you are on linux or ```setup.ps1``` if you are on windows (for sure remember to run as
+admin)
+
 ## Usage
 
 ### Command Line Arguments
@@ -67,4 +72,4 @@ Simple add regex or word in the list of keywords
 ### Example Command
 
 ```sh
-python main.py -f /path/to/binary -d Ubuntu -s -k "keyword1 ^[0-9A-Fa-f]+$"
+fabt -f /path/to/binary -d Ubuntu -s -k "keyword1 ^[0-9A-Fa-f]+$"
