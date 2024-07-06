@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.version:
-        print("Version: 1.0.0")
+        print("Version: 1.1.0", flush=True)
         exit(0)
     elif not args.filepath:
         logging.error("You must to specify the path of file")
