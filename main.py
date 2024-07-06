@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 import re
@@ -11,8 +13,8 @@ from lib.utils import run_command, read_config, fix_path, find_word_positions
 
 
 class FABT:
-    def __init__(self, path, distro=""):
-        self.path = path
+    def __init__(self, path_target, distro=""):
+        self.path_target = path_target
         self.commands = read_config()['commands']
         self.reporter = None
         self.distro = distro
@@ -26,13 +28,14 @@ class FABT:
             exit(1)
         logging.info("All checks passed")
         logging.info("Initializing report")
-        self.reporter = Reporter(self.path)
+        self.reporter = Reporter(self.path_target)
 
         logging.info("Start analysis")
         self.analysis()
         logging.info("Analysis completed")
 
-    def check_wsl(self):
+    @staticmethod
+    def check_wsl():
         logging.info("Checking for WSL")
         stdout, stderr = run_command("wsl --list", auto=False)
 
@@ -67,12 +70,12 @@ class FABT:
         """This function check if the system has all the required dependencies"""
 
         logging.info("Check if the file exist")
-        if not os.path.exists(self.path):
+        if not os.path.exists(self.path_target):
             logging.error("The file not exists")
             return 1
 
         if platform.startswith('win'):
-            self.path = fix_path(self.path, self.distro)
+            self.path_target = fix_path(self.path_target, self.distro)
 
             if self.check_wsl() == 1:
                 return 1
@@ -89,8 +92,8 @@ class FABT:
     def analysis(self):
         for command in self.commands:
             logging.debug(f"Checking {command['command']}")
-            logging.debug(command['args'].format(file=self.path))
-            formatted_command = command['command'] + " " + command['args'].format(file=self.path)
+            logging.debug(command['args'].format(file=self.path_target))
+            formatted_command = command['command'] + " " + command['args'].format(file=self.path_target)
             logging.debug(f"{formatted_command = }")
             stdout, stderr = run_command(formatted_command, distro=self.distro)
 

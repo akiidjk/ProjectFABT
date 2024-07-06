@@ -1,6 +1,8 @@
 import json
 import logging
+import os
 import subprocess
+from pathlib import Path
 from sys import platform
 
 DISTRO = "-d Ubuntu"  # TODO add argument
@@ -20,7 +22,8 @@ def run_command(command, auto=True, distro=""):
 
 
 def read_config():
-    with open("config.json", 'r') as config_file:
+    path = os.path.join(Path(__file__).resolve().parent, "..", "config.json")
+    with open(path, 'r') as config_file:
         return json.load(config_file)
 
 
