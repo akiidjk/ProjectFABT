@@ -27,6 +27,16 @@ def read_config():
         return json.load(config_file)
 
 
+def copy(path_source, path_target):
+    try:
+        with open(path_source, 'r') as source:
+            with open(path_target, 'w') as target:
+                target.write(source.read())
+    except IOError as error:
+        logging.error(f"Error in copy: {error}")
+        return 1
+
+
 def fix_path(path, distro):
     results = run_command(f'wslpath "{path}"', distro=distro)
     logging.debug(f"Results: {results}")
