@@ -20,9 +20,9 @@ def run_command(command, auto=True, distro="", timeout=None):
     try:
         stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        logging.warning(f"Command '{command}' timed out after {timeout} seconds")
+        logging.error(f"Command '{command}' timed out after {timeout} seconds")
         logging.warning(
-            "If the command require an input please run it manually or remove timeout from the command and press ctrl-c when you want to stop the command")
+            "If the command require an input you can type the input in the terminal normally and press enter to continue")
         process.kill()
         stdout, stderr = "", "Timeout error"
 

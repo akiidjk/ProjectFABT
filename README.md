@@ -113,6 +113,11 @@ if __name__ == "__main__":
 
 ```
 
+## Notes:
+
+FABT uses subprocess.Popen and when using a command such as strace or ltrace, it can request an input that can be given
+with a simple text when execution appears to be blocked
+
 ### Example Command
 
 ```sh
