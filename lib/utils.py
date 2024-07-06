@@ -12,12 +12,20 @@ def remove_null_bytes(text):
     return text.replace('\x00', '')
 
 
-def run_command(command, auto=True, distro=""):
+def run_command(command, auto=True, distro="", timeout=None):
     if platform.startswith('win') and auto:
         command = f"wsl -d {distro} {command}" if distro != "" else f"wsl {command}"
     logging.debug(f"Running command: {command}")
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    stdout, stderr = process.communicate()
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        logging.warning(f"Command '{command}' timed out after {timeout} seconds")
+        logging.warning(
+            "If the command require an input please run it manually or remove timeout from the command and press ctrl-c when you want to stop the command")
+        process.kill()
+        stdout, stderr = "", "Timeout error"
+
     return remove_null_bytes(stdout), remove_null_bytes(stderr)
 
 

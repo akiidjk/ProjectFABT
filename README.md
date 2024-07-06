@@ -27,27 +27,27 @@ admin)
 ### Command Line Arguments
 
 - **`-f` or `--filepath`**:
-  - Description: Path to the binary for execution.
-  - Default: `None`
+    - Description: Path to the binary for execution.
+    - Default: `None`
 
 - **`-d` or `--distro`**:
-  - Description: Specify the WSL distribution.
-  - Default: `""` (empty string)
+    - Description: Specify the WSL distribution.
+    - Default: `""` (empty string)
 
 - **`-v` or `--version`**:
-  - Description: Print the version and exit.
+    - Description: Print the version and exit.
 
 - **`-s` or `--search`**:
-  - Description: Enable search in stdout for keywords or regex specified via command line or `config.json`.
+    - Description: Enable search in stdout for keywords or regex specified via command line or `config.json`.
 
 - **`-k` or `--keywords`**:
-  - Description: Specify keywords or regex (e.g., `^[0-9A-Fa-f]+$`) for searching in stdout. Separate multiple entries
-    with a single space. Can be specified via command line or `config.json`.
-  - Default: `None`
+    - Description: Specify keywords or regex (e.g., `^[0-9A-Fa-f]+$`) for searching in stdout. Separate multiple entries
+      with a single space. Can be specified via command line or `config.json`.
+    - Default: `None`
 
 - **`-i` or `--init-main`**:
-  - Generate a Python file named `main.py` that includes a template designed for leveraging `pwntools` to facilitate
-    binary exploitation tasks. For insert a personal template edit the file /lib/template.py
+    - Generate a Python file named `main.py` that includes a template designed for leveraging `pwntools` to facilitate
+      binary exploitation tasks. For insert a personal template edit the file /lib/template.py
 
 ### Config
 
@@ -60,6 +60,7 @@ So for add command simple modify the config.json file and add in the list a map 
   "command": "The command to be executed (e.g., 'strings').",
   "args": "One or more arguments for the command, with '{file}' as a placeholder for the file path.",
   "check": "An argument used to verify the correctly functioning of the command. (e.g., '-v or --version')"
+  "timeout": "*OPTIONAL* The maximum time in seconds for the command to execute."
 }
 ```
 
@@ -92,20 +93,20 @@ context.level = 'info'
 
 
 def main(mode: str):
-  if mode == "local":
-    p = elf.process()
-    g = gdb.attach(p, gdbscript='''''')
-  elif mode == "remote":
-    p = connect(host, port)
-  else:
-    Error("Usage: python3 exploit.py [local|remote]")
-    exit(1)
+    if mode == "local":
+        p = elf.process()
+        g = gdb.attach(p, gdbscript='''''')
+    elif mode == "remote":
+        p = connect(host, port)
+    else:
+        Error("Usage: python3 exploit.py [local|remote]")
+        exit(1)
 
-  p.interactive()
+    p.interactive()
 
 
 if __name__ == "__main__":
-  main(argv[1])
+    main(argv[1])
 
 # Good luck by @akiidjk
 

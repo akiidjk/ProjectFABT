@@ -3,7 +3,8 @@
     {
       "command": "strings",
       "args": "{file}",
-      "check": "-v"
+      "check": "-v",
+      "timeout": 15
     },
     {
       "command": "file",
@@ -16,19 +17,14 @@
       "check": "-v"
     },
     {
-	  "command":"objdump",
-	  "args": "-t {file}",
-	  "check": "-v"
+      "command": "objdump",
+      "args": "-t {file}",
+      "check": "-v"
     },
     {
       "command": "checksec",
       "args": "--file={file}",
       "check": "--help"
-    },
-    {
-      "command": "strace",
-      "args": "{file}",
-      "check": "--version"
     },
     {
       "command": "ltrace",

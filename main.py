@@ -91,11 +91,15 @@ class FABT:
 
     def analysis(self):
         for command in self.commands:
+            logging.info("Executing command: " + command['command'])
             logging.debug(f"Checking {command['command']}")
             logging.debug(command['args'].format(file=self.path_target))
             formatted_command = command['command'] + " " + command['args'].format(file=self.path_target)
             logging.debug(f"{formatted_command = }")
-            stdout, stderr = run_command(formatted_command, distro=self.distro)
+            if "timeout" in command.keys():
+                stdout, stderr = run_command(formatted_command, distro=self.distro, timeout=command['timeout'])
+            else:
+                stdout, stderr = run_command(formatted_command, distro=self.distro)
 
             command_report = f"""
 ## Command: {command['command']}
@@ -144,7 +148,8 @@ class FABT:
         logging.info("Searched ended")
         return 0
 
-    def create_main(self):
+    @staticmethod
+    def create_main():
         path = os.path.join(os.getcwd(), "main.py")
         template = os.path.join(os.path.dirname(__file__), "lib", "template.py")
         logging.info(f"Creating main.py at {path}")
