@@ -1,4 +1,4 @@
-
+Write-Host "Setting up the environment..."
 param (
     [string]$pythonScriptPath = ".\main.py",
     [string]$batFileName = "fabt.bat",
@@ -27,4 +27,4 @@ $batFilePath = Join-Path -Path $targetPath -ChildPath $batFileName
 New-Item -Path $batFilePath -ItemType File -Force
 Set-Content -Path $batFilePath -Value $batContent
 
-Write-Host "File batch creato con successo: $batFilePath"
+Write-Host "Done! Run 'fabt -v' to start the program."
