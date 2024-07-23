@@ -19,7 +19,7 @@ expressions within the output. It can be configured via the command line or a `c
 
 ## Installation
 
-Simple run the ```setup.sh``` if you are on linux or ```setup.ps1``` if you are on windows (for sure remember to run as
+Simple run the ```sudo setup.sh``` if you are on linux or ```setup.ps1``` if you are on windows (for sure remember to run as
 admin)
 
 ## Usage
